@@ -10,7 +10,7 @@ import vk
 # Get a new token:
 # https://oauth.vk.com/authorize?client_id=7922706&display=page&redirect_uri=https://oauth.vk.com/blank.html&scope=8194&response_type=token&v=5.52
 
-DEFAULT_TOKEN = 'bef73c4e35cd11cea208fb6b11aa4f39e9128705fc57e9569044efd4037be4d5051eda1bfd6745fa758a3'
+DEFAULT_TOKEN = '9c6632069c6632069c663206a19c1ed61499c669c663206fd7701b108a6f85c9864837b'
 DEFAULT_VK_VER = '5.131'
 
 
