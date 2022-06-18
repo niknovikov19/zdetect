@@ -7,10 +7,9 @@ from tqdm import tqdm
 import vk
 
 
-# Get a new token:
-# https://oauth.vk.com/authorize?client_id=7922706&display=page&redirect_uri=https://oauth.vk.com/blank.html&scope=8194&response_type=token&v=5.52
-
+# Service token
 DEFAULT_TOKEN = '9c6632069c6632069c663206a19c1ed61499c669c663206fd7701b108a6f85c9864837b'
+
 DEFAULT_VK_VER = '5.131'
 
 
@@ -112,7 +111,7 @@ class VkAPI:
                         fields=fields)
                 nret = len(res['items'])
                 count += nret
-                print(f'Count: {count}')
+                print(f'Count: {count} / {ntoload}')
                 if nret:
                     members += res['items']
                     offset += nret
@@ -122,8 +121,10 @@ class VkAPI:
             except Exception as e:
                 if isinstance(e, vk.exceptions.VkAPIError):
                     if e.code != TOO_MANY_REQESTS_ERROR:
-                        print(e)
-                time.sleep(0.4)                    
+                        print(f'VkAPI Exception: {e.code}')
+                else:
+                    print(f'Exception: {e}')
+                time.sleep(0.4)                   
         return members    
     
     def load_wall_records(self, group_id, ntoread):
@@ -162,21 +163,37 @@ class VkAPI:
             groups_info += groups_info_cur
         return groups_info
             
-    def load_users_info(self, users_idx):
-        users_info = {}
+    def load_users_info(self, users_idx, fields=None, output=None):
+        if output is None:
+            users_info = {}
+        else:
+            users_info = output
         pos = 0
+        if fields is None:
+            fields = []
         # Request info in portions of 1000 users or less
         while pos < len(users_idx):
-            ntoread = min(len(users_idx) - pos, 1000)
-            users_idx_slice = users_idx[pos : ntoread+pos]
-            #print('Load user info')
-            time.sleep(1)
-            users_info_new_ = self.api.users.get(user_ids=users_idx_slice,
-                                                   v=self.ver)
-            pos += len(users_info_new_)
-            users_info_new = {user_info['id']: user_info
-                              for user_info in users_info_new_}
-            users_info.update(users_info_new)
+            try:
+                ntoread = min(len(users_idx) - pos, 1000)
+                users_idx_slice = users_idx[pos : ntoread + pos]
+                #print('Load user info')
+                #time.sleep(1)
+                users_info_new_ = self.api.users.get(
+                        user_ids=users_idx_slice, fields=fields, v=self.ver)
+                #pos += len(users_info_new_)
+                pos += ntoread  # get() could return less users due to 
+                                # non-existing accounts
+                users_info_new = {user_info['id']: user_info
+                                  for user_info in users_info_new_}
+                users_info.update(users_info_new)
+                print(f'Count: {len(users_info)} / {len(users_idx)}')
+            except Exception as e:
+                if isinstance(e, vk.exceptions.VkAPIError):
+                    if e.code != TOO_MANY_REQESTS_ERROR:
+                        print(f'VkAPI Exception: {e.code}')
+                else:
+                    print(f'Exception: {e}')
+                time.sleep(0.4)        
         return users_info
 
     def count_user_comments(self, group_id, recs):
